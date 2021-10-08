@@ -22,6 +22,8 @@ const types = {
   ]
 };
 
+//truffle test --show-events
+
 contract('IPPBlock', (accounts) => {
   it('Test ippblock signature', async () => {
     const ip = await IPPBlock.deployed();
@@ -29,6 +31,7 @@ contract('IPPBlock', (accounts) => {
     let date = new Date();
     let creation = date.getTime();
 
+    // sha512 checksum from ip files
     const contents = [
       '210aae6c8f9c7c4b23ee2cd0471c75ac7621076136d97f187a9580a93eb1817c3d7bb9f8dbb7426e33f7d60f27b75ede867ff83b3301a8a5b249f92591c88ece',
       '210aae6c8f9c7c4b23ee2cd0471c75ac7621076136d97f187a9580a93eb1817c3d7bb9f8dbb7426e33f7d60f27b75ede867ff83b3301a8a5b249f92591c88ece'
@@ -57,6 +60,8 @@ contract('IPPBlock', (accounts) => {
       contents,
       signature);
 
+    assert.equal(await ip.symbol(), 'IPP', "invalid symbol");
+
 
     assert.equal(owner, signer.address, "invalid signature");
 
@@ -71,6 +76,12 @@ contract('IPPBlock', (accounts) => {
     balance = await ip.balanceOf(signer.address);
     assert.equal(balance.toNumber(), 1, "invalid balance");
 
+    let digest = await ip.generateDigest(signer.address,
+      ethers.utils.formatBytes32String('Certification title'),
+      ethers.BigNumber.from(creation),
+      contents);
+
+    let tokenOwner = await ip.ownerOf(digest);
+    assert.equal(tokenOwner, signer.address, "invalid owner");
   });
 });
-//truffle test --show-events

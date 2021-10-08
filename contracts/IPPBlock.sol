@@ -1339,6 +1339,27 @@ contract EIP712 {
         });
         return ip;
     }
+
+    function generateDigest(
+        address owner,
+        bytes32 title,
+        uint256 creation,
+        string[] memory contents
+    ) public view returns (bytes32) {
+        IPP memory ip = IPP({
+            from: Person({
+                name: "IPPBlock",
+                wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
+            }),
+            to: Person({name: "Owner", wallet: owner}),
+            title: title,
+            creation: creation,
+            contents: contents
+        });
+
+        bytes32 tokenId = sign(ip);
+        return tokenId;
+    }
 }
 
 contract IPPBlock is ERC721, EIP712, Ownable {
