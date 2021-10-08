@@ -1257,22 +1257,6 @@ contract EIP712 {
         return ecrecover(digest, v, r, s);
     }
 
-    event Digest(bytes32);
-    event Signer(address);
-
-    function sign(IPP memory ip) internal view returns (bytes32) {
-        // Note: we need to use `encodePacked` here instead of `encode`.
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, hash(ip))
-        );
-
-        bytes32 signed = keccak256(
-            abi.encodePacked("\x19Ethereum Signed Message:\n32", digest)
-        );
-
-        return signed;
-    }
-
     // Signature methods
 
     function splitSignature(bytes memory sig)
@@ -1329,17 +1313,20 @@ contract EIP712 {
         return verify(ip, v, r, s);
     }
 
-    function test(
+    function sign(IPP memory ip) internal view returns (bytes32) {
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, hash(ip))
+        );
+
+        return digest;
+    }
+
+    function createIP(
         address owner,
         bytes32 title,
         uint256 creation,
-        string[] memory contents,
-        bytes memory signature
-    ) public view returns (bytes32, address) {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
+        string[] memory contents
+    ) internal pure returns (IPP memory) {
         IPP memory ip = IPP({
             from: Person({
                 name: "IPPBlock",
@@ -1350,15 +1337,21 @@ contract EIP712 {
             creation: creation,
             contents: contents
         });
-
-        bytes32 d = sign(ip);
-
-        return (d, msg.sender);
-
-        //(v, r, s) = splitSignature(signature);
+        return ip;
     }
 }
 
-contract IPPBlock is ERC721, EIP712 {
+contract IPPBlock is ERC721, EIP712, Ownable {
     constructor() ERC721("IPPblock", "IPP") {}
+
+    function mint(
+        address _owner,
+        bytes32 _title,
+        uint256 _creation,
+        string[] memory _contents
+    ) public onlyOwner {
+        IPP memory ip = createIP(_owner, _title, _creation, _contents);
+        bytes32 tokenId = sign(ip);
+        _safeMint(_owner, tokenId);
+    }
 }

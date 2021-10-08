@@ -8,14 +8,6 @@ contract TestIPPBlock {
 
   function testSignatureUsingDeployedContract() public {
     IPPBlock _ip = IPPBlock(DeployedAddresses.IPPBlock());
-
-    
-
-    string[] memory _array = new string[](2);
-    _array[1] = "1";
-     _array[1] = "2";
-    _ip.test(0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC, "title", 12342, _array, "signature");
-    //_ip.test();
   }
 
 

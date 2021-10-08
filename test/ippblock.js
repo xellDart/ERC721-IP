@@ -60,5 +60,17 @@ contract('IPPBlock', (accounts) => {
 
     assert.equal(owner, signer.address, "invalid signature");
 
+    let balance = await ip.balanceOf(signer.address);
+    assert.equal(balance.toNumber(), 0, "invalid balance");
+
+    await ip.mint(signer.address,
+      ethers.utils.formatBytes32String('Certification title'),
+      ethers.BigNumber.from(creation),
+      contents);
+
+    balance = await ip.balanceOf(signer.address);
+    assert.equal(balance.toNumber(), 1, "invalid balance");
+
   });
 });
+//truffle test --show-events
