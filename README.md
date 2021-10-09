@@ -30,15 +30,13 @@ const domain = {
 };
 
 const types = {
-  Person: [
+  Issuer: [
     { name: 'name', type: 'bytes32' },
     { name: 'wallet', type: 'address' },
   ],
   IPP: [
-    { name: 'from', type: 'Person' },
-    { name: 'to', type: 'Person' },
+    { name: 'from', type: 'Issuer' },
     { name: 'title', type: 'bytes32' },
-    { name: 'creation', type: 'uint' },
     { name: 'contents', type: 'string[]' },
   ]
 };
@@ -53,10 +51,6 @@ const ip = await IPPBlock.deployed();
 // init wallet for testing
 const signer = new ethers.Wallet('0x6639fb3d97a571cb253589fddf53edc8d331eab7ac36c45423074ef55d96aba0');
 
-// get current date in long formant
-let date = new Date();
-let creation = date.getTime();
-
 // sha512 checksum from ip files
 const contents = [
       '210aae6c8f9c7c4b23ee2cd0471c75ac7621076136d97f187a9580a93eb1817c3d7bb9f8dbb7426e33f7d60f27b75ede867ff83b3301a8a5b249f92591c88ece',
@@ -68,14 +62,9 @@ const value = {
 	from: {
 		name: ethers.utils.formatBytes32String('IPPBlock'),
 		wallet: '0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF'
-},
-	to: {
-		name: ethers.utils.formatBytes32String('Owner'),
-		wallet: signer.address
-},
-		title: ethers.utils.formatBytes32String('Certification title'),
-		creation: ethers.BigNumber.from(creation),
-		contents: contents
+	},
+	title: ethers.utils.formatBytes32String('Certification title'),
+	contents: contents
 };
 
 // get EIP712 signature using etherjs
@@ -83,9 +72,7 @@ const signature = await signer._signTypedData(domain, types, value);
 
 // contract can verify certifications signatures
 let owner = await ip.recoverSigner(
-	signer.address,
 	ethers.utils.formatBytes32String('Certification title'),
-	ethers.BigNumber.from(creation),
 	contents,
 	signature);
 	
@@ -101,7 +88,6 @@ assert.equal(balance.toNumber(), 0, "invalid balance");
 // create new signature as ERC721 token
 await ip.mint(signer.address,
 	ethers.utils.formatBytes32String('Certification title'),
-	ethers.BigNumber.from(creation),
 	contents);
 	
 // get new account certifications
@@ -109,9 +95,8 @@ let certs = await ip.balanceOf(signer.address);
 assert.equal(balance.toNumber(), 0, "invalid balance");
 
 // calculate digest for curren EIP message
-let digest = await ip.generateDigest(signer.address,
+let digest = await ip.generateDigest(
 	ethers.utils.formatBytes32String('Certification title'),
-	ethers.BigNumber.from(creation),
 	contents);
 	
 // get owner from certificate
@@ -131,7 +116,7 @@ function createIP(bytes32 title, string[] memory contents)
 	IPP memory ip = IPP({
 		from: Issuer({
 			name: "IPPBlock",
-            wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
+        	wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
         }),
         title: title,
         contents: contents
