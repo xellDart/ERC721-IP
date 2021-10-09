@@ -119,7 +119,112 @@ let tokenOwner = await ip.ownerOf(digest);
 assert.equal(tokenOwner, signer.address, "invalid owner");
 ```
 
-Every signature can share to other user
+In Blcockhain layer, we hace useful functions for validate and generate signatures, for example:
 
-TODO:
-Recalculate signature on trnasfer
+```solidity
+// This function creates in memory data structure for hashing or validate certification;
+function createIP(bytes32 title, string[] memory contents)
+    internal
+    pure
+    returns (IPP memory)
+{
+	IPP memory ip = IPP({
+		from: Issuer({
+			name: "IPPBlock",
+            wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
+        }),
+        title: title,
+        contents: contents
+    });
+    return ip;
+}
+```
+
+For validate certification, we need recover original address in signature, and compare this wit owner of current token.
+Every NFT ID is the result from hashin EIP 712 data structure
+
+For validation we need to pass checksums from original files, signature generated and title of register;
+
+```solidity
+
+// Signature methods
+
+function splitSignature(bytes memory sig)
+    internal
+    pure
+    returns (
+        uint8,
+        bytes32,
+        bytes32
+    )
+{
+    require(sig.length == 65);
+
+    bytes32 r;
+    bytes32 s;
+    uint8 v;
+
+     assembly {
+        // first 32 bytes, after the length prefix
+        r := mload(add(sig, 32))
+        // second 32 bytes
+        s := mload(add(sig, 64))
+        // final byte (first byte of the next 32 bytes)
+        v := byte(0, mload(add(sig, 96)))
+    }
+
+    return (v, r, s);
+}
+
+// Validate signature
+function recoverSigner(
+    bytes32 _title,
+    string[] memory _contents,
+    bytes memory _signature
+) public view returns (address) {
+    uint8 v;
+    bytes32 r;
+    bytes32 s;
+
+    IPP memory ip = createIP(_title, _contents);
+
+    (v, r, s) = splitSignature(_signature);
+
+    return verify(ip, v, r, s);
+}
+```
+
+For generate NFT ID we use digest:
+
+```solidity
+
+function generateDigest(bytes32 _title, string[] memory _contents)
+    public
+    view
+    returns (bytes32)
+{
+    IPP memory ip = createIP(_title, _contents);
+
+    bytes32 tokenId = sign(ip);
+    return tokenId;
+}
+```
+
+and for NFT creation:
+
+```solidity
+function mint(
+    address _owner,
+    bytes32 _title,
+    string[] memory _contents
+) public onlyOwner {
+    IPP memory ip = createIP(_title, _contents);
+    bytes32 tokenId = sign(ip);
+    _safeMint(_owner, tokenId);
+}
+```
+
+In short words, we use digest generated using EIP 712 for NFT ID, and we provider methods for validation of digest;
+
+
+Every signature can share to other user
