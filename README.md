@@ -12,7 +12,7 @@ The modifications made to the erc721 standard are the change of the token id (ui
 
 ```solidity
 // Mapping from token ID to owner address
- mapping(bytes32 => address) private _owners;
+mapping(bytes32 => address) private _owners;
 ```
 
 This allows us to make assignments of the EIP712 message result
@@ -134,6 +134,14 @@ For validation we need to pass checksums from original files, signature generate
 
 // Signature methods
 
+function sign(IPP memory ip) internal view returns (bytes32) {
+    bytes32 digest = keccak256(
+        abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, hash(ip))
+    );
+
+    return digest;
+}
+
 function splitSignature(bytes memory sig)
     internal
     pure
@@ -189,7 +197,6 @@ function generateDigest(bytes32 _title, string[] memory _contents)
     returns (bytes32)
 {
     IPP memory ip = createIP(_title, _contents);
-
     bytes32 tokenId = sign(ip);
     return tokenId;
 }
