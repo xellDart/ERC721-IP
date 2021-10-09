@@ -1159,16 +1159,14 @@ contract EIP712 {
         address verifyingContract;
     }
 
-    struct Person {
+    struct Issuer {
         bytes32 name;
         address wallet;
     }
 
     struct IPP {
-        Person from;
-        Person to;
+        Issuer from;
         bytes32 title;
-        uint256 creation;
         string[] contents;
     }
 
@@ -1177,12 +1175,12 @@ contract EIP712 {
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
         );
 
-    bytes32 constant PERSON_TYPEHASH =
-        keccak256("Person(bytes32 name,address wallet)");
+    bytes32 constant ISSUER_TYPEHASH =
+        keccak256("Issuer(bytes32 name,address wallet)");
 
     bytes32 constant IPP_TYPEHASH =
         keccak256(
-            "IPP(Person from,Person to,bytes32 title,uint creation,string[] contents)Person(bytes32 name,address wallet)"
+            "IPP(Issuer from,bytes32 title,string[] contents)Issuer(bytes32 name,address wallet)"
         );
 
     bytes32 DOMAIN_SEPARATOR;
@@ -1215,9 +1213,9 @@ contract EIP712 {
             );
     }
 
-    function hash(Person memory person) internal pure returns (bytes32) {
+    function hash(Issuer memory issuer) internal pure returns (bytes32) {
         return
-            keccak256(abi.encode(PERSON_TYPEHASH, person.name, person.wallet));
+            keccak256(abi.encode(ISSUER_TYPEHASH, issuer.name, issuer.wallet));
     }
 
     function hash(string[] memory files) internal pure returns (bytes32) {
@@ -1235,12 +1233,26 @@ contract EIP712 {
                 abi.encode(
                     IPP_TYPEHASH,
                     hash(ip.from),
-                    hash(ip.to),
                     ip.title,
-                    ip.creation,
                     hash(ip.contents)
                 )
             );
+    }
+
+    function createIP(bytes32 title, string[] memory contents)
+        internal
+        pure
+        returns (IPP memory)
+    {
+        IPP memory ip = IPP({
+            from: Issuer({
+                name: "IPPBlock",
+                wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
+            }),
+            title: title,
+            contents: contents
+        });
+        return ip;
     }
 
     function verify(
@@ -1287,28 +1299,17 @@ contract EIP712 {
     }
 
     function recoverSigner(
-        address owner,
-        bytes32 title,
-        uint256 creation,
-        string[] memory contents,
-        bytes memory signature
+        bytes32 _title,
+        string[] memory _contents,
+        bytes memory _signature
     ) public view returns (address) {
         uint8 v;
         bytes32 r;
         bytes32 s;
 
-        IPP memory ip = IPP({
-            from: Person({
-                name: "IPPBlock",
-                wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
-            }),
-            to: Person({name: "Owner", wallet: owner}),
-            title: title,
-            creation: creation,
-            contents: contents
-        });
+        IPP memory ip = createIP(_title, _contents);
 
-        (v, r, s) = splitSignature(signature);
+        (v, r, s) = splitSignature(_signature);
 
         return verify(ip, v, r, s);
     }
@@ -1321,41 +1322,12 @@ contract EIP712 {
         return digest;
     }
 
-    function createIP(
-        address owner,
-        bytes32 title,
-        uint256 creation,
-        string[] memory contents
-    ) internal pure returns (IPP memory) {
-        IPP memory ip = IPP({
-            from: Person({
-                name: "IPPBlock",
-                wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
-            }),
-            to: Person({name: "Owner", wallet: owner}),
-            title: title,
-            creation: creation,
-            contents: contents
-        });
-        return ip;
-    }
-
-    function generateDigest(
-        address owner,
-        bytes32 title,
-        uint256 creation,
-        string[] memory contents
-    ) public view returns (bytes32) {
-        IPP memory ip = IPP({
-            from: Person({
-                name: "IPPBlock",
-                wallet: 0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF
-            }),
-            to: Person({name: "Owner", wallet: owner}),
-            title: title,
-            creation: creation,
-            contents: contents
-        });
+    function generateDigest(bytes32 _title, string[] memory _contents)
+        public
+        view
+        returns (bytes32)
+    {
+        IPP memory ip = createIP(_title, _contents);
 
         bytes32 tokenId = sign(ip);
         return tokenId;
@@ -1368,10 +1340,9 @@ contract IPPBlock is ERC721, EIP712, Ownable {
     function mint(
         address _owner,
         bytes32 _title,
-        uint256 _creation,
         string[] memory _contents
     ) public onlyOwner {
-        IPP memory ip = createIP(_owner, _title, _creation, _contents);
+        IPP memory ip = createIP(_title, _contents);
         bytes32 tokenId = sign(ip);
         _safeMint(_owner, tokenId);
     }

@@ -9,15 +9,13 @@ const domain = {
 };
 
 const types = {
-  Person: [
+  Issuer: [
     { name: 'name', type: 'bytes32' },
     { name: 'wallet', type: 'address' },
   ],
   IPP: [
-    { name: 'from', type: 'Person' },
-    { name: 'to', type: 'Person' },
+    { name: 'from', type: 'Issuer' },
     { name: 'title', type: 'bytes32' },
-    { name: 'creation', type: 'uint' },
     { name: 'contents', type: 'string[]' },
   ]
 };
@@ -27,7 +25,7 @@ const types = {
 contract('IPPBlock', (accounts) => {
   it('Test ippblock signature', async () => {
     const ip = await IPPBlock.deployed();
-    const signer = new ethers.Wallet('0x6639fb3d97a571cb253589fddf53edc8d331eab7ac36c45423074ef55d96aba0');
+    const signer = new ethers.Wallet('d3f0dfd31a6344648c5481eb59aa23e47e18638c9825e93093a048b0f63b7fa5');
     let date = new Date();
     let creation = date.getTime();
 
@@ -42,43 +40,33 @@ contract('IPPBlock', (accounts) => {
         name: ethers.utils.formatBytes32String('IPPBlock'),
         wallet: '0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF'
       },
-      to: {
-        name: ethers.utils.formatBytes32String('Owner'),
-        wallet: signer.address
-      },
       title: ethers.utils.formatBytes32String('Certification title'),
-      creation: ethers.BigNumber.from(creation),
       contents: contents,
     };
 
     const signature = await signer._signTypedData(domain, types, value);
 
     let owner = await ip.recoverSigner(
-      signer.address,
       ethers.utils.formatBytes32String('Certification title'),
-      ethers.BigNumber.from(creation),
       contents,
       signature);
 
-    assert.equal(await ip.symbol(), 'IPP', "invalid symbol");
-
-
     assert.equal(owner, signer.address, "invalid signature");
+
+    assert.equal(await ip.symbol(), 'IPP', "invalid symbol");
 
     let balance = await ip.balanceOf(signer.address);
     assert.equal(balance.toNumber(), 0, "invalid balance");
 
     await ip.mint(signer.address,
       ethers.utils.formatBytes32String('Certification title'),
-      ethers.BigNumber.from(creation),
       contents);
 
     balance = await ip.balanceOf(signer.address);
     assert.equal(balance.toNumber(), 1, "invalid balance");
 
-    let digest = await ip.generateDigest(signer.address,
+    let digest = await ip.generateDigest(
       ethers.utils.formatBytes32String('Certification title'),
-      ethers.BigNumber.from(creation),
       contents);
 
     let tokenOwner = await ip.ownerOf(digest);
