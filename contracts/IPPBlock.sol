@@ -1166,7 +1166,7 @@ contract EIP712 {
 
     struct IPP {
         Issuer from;
-        bytes32 title;
+        string title;
         string[] contents;
     }
 
@@ -1180,7 +1180,7 @@ contract EIP712 {
 
     bytes32 constant IPP_TYPEHASH =
         keccak256(
-            "IPP(Issuer from,bytes32 title,string[] contents)Issuer(bytes32 name,address wallet)"
+            "IPP(Issuer from,string title,string[] contents)Issuer(bytes32 name,address wallet)"
         );
 
     bytes32 DOMAIN_SEPARATOR;
@@ -1233,13 +1233,13 @@ contract EIP712 {
                 abi.encode(
                     IPP_TYPEHASH,
                     hash(ip.from),
-                    ip.title,
+                    keccak256(bytes(ip.title)),
                     hash(ip.contents)
                 )
             );
     }
 
-    function createIP(bytes32 title, string[] memory contents)
+    function createIP(string memory title, string[] memory contents)
         internal
         pure
         returns (IPP memory)
@@ -1299,7 +1299,7 @@ contract EIP712 {
     }
 
     function recoverSigner(
-        bytes32 _title,
+        string memory _title,
         string[] memory _contents,
         bytes memory _signature
     ) public view returns (address) {
@@ -1322,7 +1322,7 @@ contract EIP712 {
         return digest;
     }
 
-    function generateDigest(bytes32 _title, string[] memory _contents)
+    function generateDigest(string memory _title, string[] memory _contents)
         public
         view
         returns (bytes32)
@@ -1339,7 +1339,7 @@ contract IPPBlock is ERC721, EIP712, Ownable {
 
     function mint(
         address _owner,
-        bytes32 _title,
+        string memory _title,
         string[] memory _contents
     ) public onlyOwner {
         IPP memory ip = createIP(_title, _contents);

@@ -15,7 +15,7 @@ const types = {
   ],
   IPP: [
     { name: 'from', type: 'Issuer' },
-    { name: 'title', type: 'bytes32' },
+    { name: 'title', type: 'string' },
     { name: 'contents', type: 'string[]' },
   ]
 };
@@ -26,8 +26,6 @@ contract('IPPBlock', (accounts) => {
   it('Test ippblock signature', async () => {
     const ip = await IPPBlock.deployed();
     const signer = new ethers.Wallet('d3f0dfd31a6344648c5481eb59aa23e47e18638c9825e93093a048b0f63b7fa5');
-    let date = new Date();
-    let creation = date.getTime();
 
     // sha512 checksum from ip files
     const contents = [
@@ -40,14 +38,14 @@ contract('IPPBlock', (accounts) => {
         name: ethers.utils.formatBytes32String('IPPBlock'),
         wallet: '0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF'
       },
-      title: ethers.utils.formatBytes32String('Certification title'),
+      title: 'Certification title',
       contents: contents,
     };
 
     const signature = await signer._signTypedData(domain, types, value);
 
     let owner = await ip.recoverSigner(
-      ethers.utils.formatBytes32String('Certification title'),
+      'Certification title',
       contents,
       signature);
 
@@ -59,14 +57,14 @@ contract('IPPBlock', (accounts) => {
     assert.equal(balance.toNumber(), 0, "invalid balance");
 
     await ip.mint(signer.address,
-      ethers.utils.formatBytes32String('Certification title'),
+      'Certification title',
       contents);
 
     balance = await ip.balanceOf(signer.address);
     assert.equal(balance.toNumber(), 1, "invalid balance");
 
     let digest = await ip.generateDigest(
-      ethers.utils.formatBytes32String('Certification title'),
+      'Certification title',
       contents);
 
     let tokenOwner = await ip.ownerOf(digest);
