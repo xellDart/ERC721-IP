@@ -49,7 +49,7 @@ Example using IPP structure:
 ```javascript
 const ip = await IPPBlock.deployed();
 // init wallet for testing
-const signer = new ethers.Wallet('0x6639fb3d97a571cb253589fddf53edc8d331eab7ac36c45423074ef55d96aba0');
+const signer = new ethers.Wallet('0x6639fb3d97a571cb2539fddf53edc8d331eab7ac36c45423074ef55d96aba0');
 
 // sha512 checksum from ip files
 const contents = [
